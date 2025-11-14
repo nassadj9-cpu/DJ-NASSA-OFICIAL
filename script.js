@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "GOOGLE_API_KEY",
@@ -13,13 +14,27 @@ const firebaseConfig = {
 
 let app;
 let analytics;
+let db;
 
 try {
+    if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "") {
+        throw new Error("Firebase API key is missing. Please configure GOOGLE_API_KEY environment variable.");
+    }
+    
     app = initializeApp(firebaseConfig);
     analytics = getAnalytics(app);
+    db = getFirestore(app);
+    
     console.log('Firebase initialized successfully');
+    
+    logEvent(analytics, 'page_view', {
+        page_title: document.title,
+        page_location: window.location.href,
+        page_path: window.location.pathname
+    });
 } catch (error) {
     console.error('Error initializing Firebase:', error);
+    console.error('Firebase functionality will be limited. Please check your configuration.');
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -29,12 +44,23 @@ document.addEventListener('DOMContentLoaded', function() {
     if (hamburger) {
         hamburger.addEventListener('click', () => {
             navMenu.classList.toggle('active');
+            if (analytics) {
+                logEvent(analytics, 'menu_interaction', {
+                    action: 'toggle_mobile_menu'
+                });
+            }
         });
     }
 
     document.querySelectorAll('.nav-menu a').forEach(link => {
-        link.addEventListener('click', () => {
+        link.addEventListener('click', (e) => {
             navMenu.classList.remove('active');
+            if (analytics) {
+                logEvent(analytics, 'navigation_click', {
+                    link_text: e.target.textContent,
+                    link_url: e.target.href
+                });
+            }
         });
     });
 
@@ -57,6 +83,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         item.style.display = 'none';
                     }
                 });
+                
+                if (analytics) {
+                    logEvent(analytics, 'gallery_filter', {
+                        filter_type: filter
+                    });
+                }
             });
         });
     }
@@ -82,24 +114,48 @@ document.addEventListener('DOMContentLoaded', function() {
                 location: document.getElementById('location').value,
                 guests: document.getElementById('guests').value,
                 message: document.getElementById('message').value,
-                timestamp: new Date().toISOString()
+                timestamp: serverTimestamp(),
+                status: 'new'
             };
             
-            console.log('Form data:', formData);
-            
-            setTimeout(() => {
+            try {
+                if (!db) {
+                    throw new Error('Firebase is not initialized. Your booking request cannot be submitted at this time.');
+                }
+                
+                const docRef = await addDoc(collection(db, 'bookings'), formData);
+                console.log('Booking submitted with ID:', docRef.id);
+                
+                if (analytics) {
+                    logEvent(analytics, 'booking_request_submitted', {
+                        event_type: formData.eventType,
+                        location: formData.location
+                    });
+                }
+                
                 formMessage.className = 'form-message success';
                 formMessage.textContent = '¡Thank you! Your booking request has been received. We\'ll contact you soon!';
                 
                 contactForm.reset();
+            } catch (error) {
+                console.error('Error submitting booking:', error);
                 
+                formMessage.className = 'form-message error';
+                formMessage.textContent = 'There was an error submitting your request. Please try again or contact us directly at booking@djnassa.com';
+                
+                if (analytics) {
+                    logEvent(analytics, 'booking_request_error', {
+                        error_message: error.message
+                    });
+                }
+            } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
                 
                 setTimeout(() => {
                     formMessage.style.display = 'none';
-                }, 5000);
-            }, 1000);
+                }, 8000);
+            }
         });
     }
 
@@ -110,9 +166,19 @@ document.addEventListener('DOMContentLoaded', function() {
             if (icon.classList.contains('fa-play')) {
                 icon.classList.remove('fa-play');
                 icon.classList.add('fa-pause');
+                if (analytics) {
+                    logEvent(analytics, 'music_player_interaction', {
+                        action: 'play'
+                    });
+                }
             } else {
                 icon.classList.remove('fa-pause');
                 icon.classList.add('fa-play');
+                if (analytics) {
+                    logEvent(analytics, 'music_player_interaction', {
+                        action: 'pause'
+                    });
+                }
             }
         });
     }
@@ -124,8 +190,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 top: window.innerHeight,
                 behavior: 'smooth'
             });
+            if (analytics) {
+                logEvent(analytics, 'scroll_interaction', {
+                    action: 'scroll_down_click'
+                });
+            }
         });
     }
+
+    document.querySelectorAll('.btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            if (analytics) {
+                logEvent(analytics, 'cta_button_click', {
+                    button_text: e.currentTarget.textContent.trim(),
+                    button_href: e.currentTarget.href || 'no-link'
+                });
+            }
+        });
+    });
 
     const observerOptions = {
         threshold: 0.1,

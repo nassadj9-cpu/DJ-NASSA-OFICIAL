@@ -1,7 +1,7 @@
 import http.server
 import socketserver
 import os
-from urllib.parse import urlparse
+import sys
 
 PORT = 5000
 
@@ -19,6 +19,11 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                     content = f.read()
                 
                 api_key = os.environ.get('GOOGLE_API_KEY', '')
+                
+                if not api_key:
+                    print("WARNING: GOOGLE_API_KEY environment variable is not set.", file=sys.stderr)
+                    print("Firebase functionality will be limited.", file=sys.stderr)
+                
                 content = content.replace('GOOGLE_API_KEY', api_key)
                 
                 self.send_response(200)
@@ -32,6 +37,17 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             super().do_GET()
 
 if __name__ == '__main__':
+    api_key = os.environ.get('GOOGLE_API_KEY', '')
+    
+    if not api_key:
+        print("=" * 70)
+        print("WARNING: GOOGLE_API_KEY environment variable is not set!")
+        print("Firebase functionality will be limited.")
+        print("Please set the GOOGLE_API_KEY environment variable for full functionality.")
+        print("=" * 70)
+    else:
+        print("GOOGLE_API_KEY is configured.")
+    
     with socketserver.TCPServer(("0.0.0.0", PORT), CustomHTTPRequestHandler) as httpd:
         print(f"Server running at http://0.0.0.0:{PORT}")
         httpd.serve_forever()
