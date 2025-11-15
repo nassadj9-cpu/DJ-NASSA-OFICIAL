@@ -1,8 +1,8 @@
 entrypoint = "index.html"
-modules = ["web", "python-3.11"]
+modules = ["web", "nodejs-20", "python-3.12"]
 
 [nix]
-channel = "stable-24_11"
+channel = "stable-25_05"
 packages = ["static-web-server"]
 
 [deployment]
@@ -57,6 +57,10 @@ externalPort = 80
 [[ports]]
 localPort = 38345
 externalPort = 3000
+
+[[ports]]
+localPort = 40391
+externalPort = 3001
 
 [agent]
 expertMode = true
