@@ -1,25 +1,22 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 let storage, db;
 
-try {
-    const firebaseConfig = {
-        apiKey: window.FIREBASE_API_KEY,
-        authDomain: window.FIREBASE_AUTH_DOMAIN,
-        projectId: window.FIREBASE_PROJECT_ID,
-        storageBucket: window.FIREBASE_STORAGE_BUCKET,
-        messagingSenderId: window.FIREBASE_MESSAGING_SENDER_ID,
-        appId: window.FIREBASE_APP_ID
-    };
+function initializeVideosFirebase() {
+    if (window.firebaseApp) {
+        storage = getStorage(window.firebaseApp);
+        db = getFirestore(window.firebaseApp);
+        console.log('✓ Firebase Storage and Firestore initialized for Videos');
+    } else {
+        console.error('Firebase app not initialized. Please check script.js');
+    }
+}
 
-    const app = initializeApp(firebaseConfig);
-    storage = getStorage(app);
-    db = getFirestore(app);
-    console.log('Firebase initialized successfully for Videos');
-} catch (error) {
-    console.error('Error initializing Firebase:', error);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeVideosFirebase);
+} else {
+    initializeVideosFirebase();
 }
 
 const uploadForm = document.getElementById('uploadVideoForm');
@@ -78,11 +75,17 @@ uploadForm?.addEventListener('submit', async (e) => {
                 
                 let thumbnailURL = null;
                 if (thumbnailFile) {
-                    progressText.textContent = 'Subiendo miniatura...';
-                    const thumbnailFileName = `thumbnails/${timestamp}_${thumbnailFile.name}`;
-                    const thumbnailRef = ref(storage, thumbnailFileName);
-                    const thumbnailSnapshot = await uploadBytesResumable(thumbnailRef, thumbnailFile);
-                    thumbnailURL = await getDownloadURL(thumbnailSnapshot.ref);
+                    try {
+                        progressText.textContent = 'Subiendo miniatura...';
+                        const thumbnailFileName = `thumbnails/${timestamp}_${thumbnailFile.name}`;
+                        const thumbnailRef = ref(storage, thumbnailFileName);
+                        
+                        const { uploadBytes } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js');
+                        const thumbnailSnapshot = await uploadBytes(thumbnailRef, thumbnailFile);
+                        thumbnailURL = await getDownloadURL(thumbnailSnapshot.ref);
+                    } catch (thumbnailError) {
+                        console.error('Error subiendo miniatura:', thumbnailError);
+                    }
                 }
 
                 progressText.textContent = 'Guardando información...';

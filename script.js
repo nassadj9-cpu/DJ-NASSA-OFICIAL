@@ -3,12 +3,12 @@ import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.7.
 import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "GOOGLE_API_KEY",
-    authDomain: "dj-nassa.firebaseapp.com",
-    projectId: "dj-nassa",
-    storageBucket: "dj-nassa.firebasestorage.app",
-    messagingSenderId: "74937447758",
-    appId: "1:74937447758:web:52ca0e15280920962e5a1f",
+    apiKey: window.FIREBASE_API_KEY || "AIzaSyBVTCCnBsfZMRlxlJfQLDR1oc9dAzuN_qc",
+    authDomain: window.FIREBASE_AUTH_DOMAIN || "dj-nassa.firebaseapp.com",
+    projectId: window.FIREBASE_PROJECT_ID || "dj-nassa",
+    storageBucket: window.FIREBASE_STORAGE_BUCKET || "dj-nassa.firebasestorage.app",
+    messagingSenderId: window.FIREBASE_MESSAGING_SENDER_ID || "74937447758",
+    appId: window.FIREBASE_APP_ID || "1:74937447758:web:52ca0e15280920962e5a1f",
     measurementId: "G-TQBSY2S126"
 };
 
@@ -18,14 +18,18 @@ let db;
 
 try {
     if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "") {
-        throw new Error("Firebase API key is missing. Please configure GOOGLE_API_KEY environment variable.");
+        throw new Error("Firebase API key is missing. Please configure Firebase credentials.");
     }
     
     app = initializeApp(firebaseConfig);
+    window.firebaseApp = app;
+    
     analytics = getAnalytics(app);
     db = getFirestore(app);
     
-    console.log('Firebase initialized successfully');
+    console.log('✓ Firebase initialized successfully');
+    console.log('  - Project:', firebaseConfig.projectId);
+    console.log('  - Storage:', firebaseConfig.storageBucket);
     
     logEvent(analytics, 'page_view', {
         page_title: document.title,
