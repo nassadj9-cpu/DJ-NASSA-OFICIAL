@@ -5,17 +5,17 @@
 }
 
 :root {
-    --primary-color: #ff0080;
-    --secondary-color: #7928ca;
+    --primary-color: #ff0000;
+    --secondary-color: #cc0000;
     --accent-color: #00d4ff;
-    --dark-bg: #0a0e27;
-    --darker-bg: #050814;
+    --dark-bg: #000000;
+    --darker-bg: #0a0a0a;
     --text-light: #ffffff;
     --text-gray: #b8b9be;
-    --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    --gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    --gradient-neon: linear-gradient(135deg, #ff0080 0%, #7928ca 50%, #00d4ff 100%);
+    --gradient-1: linear-gradient(135deg, #00d4ff 0%, #0088cc 100%);
+    --gradient-2: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+    --gradient-3: linear-gradient(135deg, #00d4ff 0%, #00a8ff 100%);
+    --gradient-neon: linear-gradient(135deg, #ff0000 0%, #00d4ff 50%, #0088cc 100%);
 }
 
 body {
@@ -121,7 +121,7 @@ body {
     justify-content: center;
     position: relative;
     overflow: hidden;
-    background: linear-gradient(135deg, #0a0e27 0%, #1a1f4e 100%);
+    background: linear-gradient(135deg, #000000 0%, #1a1a2e 100%);
 }
 
 .hero-overlay {
@@ -561,7 +561,7 @@ body {
     align-items: center;
     justify-content: center;
     position: relative;
-    background: linear-gradient(135deg, #0a0e27 0%, #1a1f4e 100%);
+    background: linear-gradient(135deg, #000000 0%, #1a1a2e 100%);
     margin-top: 80px;
 }
 
