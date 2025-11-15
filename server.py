@@ -12,19 +12,32 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Expires', '0')
         super().end_headers()
     
+    def inject_firebase_config(self, content):
+        firebase_api_key = os.environ.get('FIREBASE_API_KEY', '')
+        firebase_auth_domain = os.environ.get('FIREBASE_AUTH_DOMAIN', '')
+        firebase_project_id = os.environ.get('FIREBASE_PROJECT_ID', '')
+        firebase_storage_bucket = os.environ.get('FIREBASE_STORAGE_BUCKET', '')
+        firebase_messaging_sender_id = os.environ.get('FIREBASE_MESSAGING_SENDER_ID', '')
+        firebase_app_id = os.environ.get('FIREBASE_APP_ID', '')
+        
+        js_config = f"""
+window.FIREBASE_API_KEY = '{firebase_api_key}';
+window.FIREBASE_AUTH_DOMAIN = '{firebase_auth_domain}';
+window.FIREBASE_PROJECT_ID = '{firebase_project_id}';
+window.FIREBASE_STORAGE_BUCKET = '{firebase_storage_bucket}';
+window.FIREBASE_MESSAGING_SENDER_ID = '{firebase_messaging_sender_id}';
+window.FIREBASE_APP_ID = '{firebase_app_id}';
+"""
+        return js_config + content
+    
     def do_GET(self):
-        if self.path == '/script.js':
+        if self.path in ['/script.js', '/playlist.js', '/videos.js']:
             try:
-                with open('script.js', 'r', encoding='utf-8') as f:
+                filename = self.path[1:]
+                with open(filename, 'r', encoding='utf-8') as f:
                     content = f.read()
                 
-                api_key = os.environ.get('GOOGLE_API_KEY', '')
-                
-                if not api_key:
-                    print("WARNING: GOOGLE_API_KEY environment variable is not set.", file=sys.stderr)
-                    print("Firebase functionality will be limited.", file=sys.stderr)
-                
-                content = content.replace('GOOGLE_API_KEY', api_key)
+                content = self.inject_firebase_config(content)
                 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/javascript')
@@ -32,21 +45,33 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(content.encode('utf-8'))
             except Exception as e:
-                self.send_error(500, f"Error serving script.js: {str(e)}")
+                self.send_error(500, f"Error serving {self.path}: {str(e)}")
         else:
             super().do_GET()
 
 if __name__ == '__main__':
-    api_key = os.environ.get('GOOGLE_API_KEY', '')
+    required_vars = [
+        'FIREBASE_API_KEY',
+        'FIREBASE_AUTH_DOMAIN',
+        'FIREBASE_PROJECT_ID',
+        'FIREBASE_STORAGE_BUCKET',
+        'FIREBASE_MESSAGING_SENDER_ID',
+        'FIREBASE_APP_ID'
+    ]
     
-    if not api_key:
+    missing_vars = [var for var in required_vars if not os.environ.get(var)]
+    
+    if missing_vars:
         print("=" * 70)
-        print("WARNING: GOOGLE_API_KEY environment variable is not set!")
-        print("Firebase functionality will be limited.")
-        print("Please set the GOOGLE_API_KEY environment variable for full functionality.")
+        print("WARNING: Firebase configuration is incomplete!")
+        print("Missing environment variables:")
+        for var in missing_vars:
+            print(f"  - {var}")
+        print("\nFirebase functionality will be limited.")
+        print("Please configure all Firebase environment variables for full functionality.")
         print("=" * 70)
     else:
-        print("GOOGLE_API_KEY is configured.")
+        print("✓ Firebase configuration is complete.")
     
     with socketserver.TCPServer(("0.0.0.0", PORT), CustomHTTPRequestHandler) as httpd:
         print(f"Server running at http://0.0.0.0:{PORT}")

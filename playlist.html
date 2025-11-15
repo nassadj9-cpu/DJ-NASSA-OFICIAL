@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DJ NASSA - Playlist</title>
+    <link href="style.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-music"></i>
+                <span>DJ NASSA</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html">Inicio</a></li>
+                <li><a href="about.html">Acerca</a></li>
+                <li><a href="playlist.html" class="active">Playlist</a></li>
+                <li><a href="videos.html">Videos</a></li>
+                <li><a href="contact.html">Contacto</a></li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <section class="page-header">
+        <div class="particles" id="particles"></div>
+        <h1>Mi Playlist</h1>
+        <p>Escucha y Descarga Mis Mejores Temas</p>
+    </section>
+
+    <section class="upload-section" style="background: rgba(0, 0, 0, 0.8); padding: 40px 0;">
+        <div class="container">
+            <div class="upload-box" style="max-width: 800px; margin: 0 auto; background: linear-gradient(135deg, rgba(255, 0, 0, 0.1), rgba(0, 212, 255, 0.1)); border: 2px solid rgba(0, 212, 255, 0.3); border-radius: 20px; padding: 40px;">
+                <h2 style="text-align: center; margin-bottom: 30px; background: var(--gradient-neon); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Subir Nueva Canción</h2>
+                <form id="uploadSongForm" style="display: grid; gap: 20px;">
+                    <div class="form-group">
+                        <label for="songTitle" style="color: var(--accent-color); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-heading"></i> Título de la Canción *
+                        </label>
+                        <input type="text" id="songTitle" required style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 8px; color: white; font-size: 16px;">
+                    </div>
+                    <div class="form-group">
+                        <label for="songArtist" style="color: var(--accent-color); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-user"></i> Artista
+                        </label>
+                        <input type="text" id="songArtist" placeholder="DJ NASSA" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 8px; color: white; font-size: 16px;">
+                    </div>
+                    <div class="form-group">
+                        <label for="songGenre" style="color: var(--accent-color); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-tag"></i> Género
+                        </label>
+                        <select id="songGenre" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 8px; color: white; font-size: 16px;">
+                            <option value="house">House</option>
+                            <option value="techno">Techno</option>
+                            <option value="edm">EDM</option>
+                            <option value="progressive">Progressive</option>
+                            <option value="trance">Trance</option>
+                            <option value="otros">Otros</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="songFile" style="color: var(--accent-color); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-file-audio"></i> Archivo de Audio (MP3) *
+                        </label>
+                        <input type="file" id="songFile" accept="audio/mp3,audio/mpeg" required style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 8px; color: white; font-size: 16px;">
+                    </div>
+                    <div class="form-group">
+                        <label for="songCover" style="color: var(--accent-color); font-weight: 600; margin-bottom: 8px; display: block;">
+                            <i class="fas fa-image"></i> Imagen de Portada
+                        </label>
+                        <input type="file" id="songCover" accept="image/*" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 8px; color: white; font-size: 16px;">
+                    </div>
+                    <div id="uploadProgress" style="display: none;">
+                        <div style="background: rgba(0, 0, 0, 0.5); border-radius: 10px; overflow: hidden; height: 30px; margin: 10px 0;">
+                            <div id="progressBar" style="height: 100%; background: var(--gradient-neon); width: 0%; transition: width 0.3s; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;"></div>
+                        </div>
+                        <p id="progressText" style="text-align: center; color: var(--accent-color);"></p>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-large" style="margin-top: 20px;">
+                        <i class="fas fa-upload"></i> Subir Canción
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <section class="playlist-section" style="padding: 60px 0;">
+        <div class="container">
+            <h2 class="section-title">Canciones Disponibles</h2>
+            <div id="playlistGrid" class="playlist-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; margin-top: 40px;">
+            </div>
+            <div id="emptyState" style="text-align: center; padding: 60px 20px;">
+                <i class="fas fa-music" style="font-size: 80px; color: var(--accent-color); opacity: 0.3; margin-bottom: 20px;"></i>
+                <p style="color: var(--text-gray); font-size: 18px;">No hay canciones aún. ¡Sube la primera!</p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>DJ NASSA</h3>
+                    <p>Creando experiencias musicales inolvidables desde 2015</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Enlaces Rápidos</h4>
+                    <ul>
+                        <li><a href="index.html">Inicio</a></li>
+                        <li><a href="about.html">Acerca</a></li>
+                        <li><a href="playlist.html">Playlist</a></li>
+                        <li><a href="contact.html">Contacto</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contacto</h4>
+                    <p><i class="fas fa-envelope"></i> booking@djnassa.com</p>
+                    <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 DJ NASSA. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script type="module" src="script.js"></script>
+    <script type="module" src="playlist.js"></script>
+</body>
+</html>
