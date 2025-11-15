@@ -2,14 +2,42 @@ import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'https://w
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 let storage, db;
+let initialized = false;
 
-function initializeVideosFirebase() {
-    if (window.firebaseApp) {
-        storage = getStorage(window.firebaseApp);
-        db = getFirestore(window.firebaseApp);
-        console.log('✓ Firebase Storage and Firestore initialized for Videos');
-    } else {
+async function initializeVideosFirebase() {
+    if (initialized) return;
+    initialized = true;
+    
+    await window.firebaseReadyPromise;
+    
+    if (!window.firebaseApp) {
         console.error('Firebase app not initialized. Please check script.js');
+        return;
+    }
+    
+    storage = getStorage(window.firebaseApp);
+    db = getFirestore(window.firebaseApp);
+    
+    console.log('✓ Firebase Storage and Firestore initialized for Videos');
+    
+    window.registerAuthListener((user) => {
+        updateUploadFormVisibility(user);
+        if (db) {
+            loadVideos();
+        }
+    });
+    
+    await window.authReadyPromise;
+}
+
+function updateUploadFormVisibility(user) {
+    const uploadSection = document.getElementById('uploadSection');
+    if (!uploadSection) return;
+    
+    if (user && user.email === 'nassadj9@gmail.com') {
+        uploadSection.style.display = 'block';
+    } else {
+        uploadSection.style.display = 'none';
     }
 }
 
@@ -28,6 +56,11 @@ const progressText = document.getElementById('progressText');
 
 uploadForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    
+    if (!window.isAdmin) {
+        alert('Solo el administrador puede subir videos.');
+        return;
+    }
     
     if (!storage || !db) {
         alert('Firebase no está configurado correctamente. Por favor contacta al administrador.');
@@ -154,6 +187,7 @@ async function loadVideos() {
 
 function createVideoCard(video) {
     const thumbnail = video.thumbnailURL || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="225"%3E%3Crect fill="%23000" width="400" height="225"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%2300d4ff" font-size="60" font-family="Arial"%3E▶%3C/text%3E%3C/svg%3E';
+    const isAdmin = window.isAdmin;
     
     const categoryLabels = {
         'sets': 'Sets en Vivo',
@@ -181,9 +215,11 @@ function createVideoCard(video) {
                     <button class="download-btn btn btn-primary" data-url="${video.videoURL}" data-title="${video.title}" style="flex: 1; padding: 10px;">
                         <i class="fas fa-download"></i> Descargar
                     </button>
+                    ${isAdmin ? `
                     <button class="delete-btn" data-id="${video.id}" style="padding: 10px 15px; background: rgba(255, 0, 0, 0.2); border: 1px solid rgba(255, 0, 0, 0.5); border-radius: 8px; color: var(--primary-color); cursor: pointer; transition: all 0.3s;">
                         <i class="fas fa-trash"></i>
                     </button>
+                    ` : ''}
                 </div>
                 <video controls style="width: 100%; border-radius: 8px; background: #000;">
                     <source src="${video.videoURL}" type="video/mp4">
@@ -204,6 +240,11 @@ function downloadVideo(url, title) {
 }
 
 async function deleteVideo(id) {
+    if (!window.isAdmin) {
+        alert('Solo el administrador puede eliminar videos.');
+        return;
+    }
+    
     if (!confirm('¿Estás seguro de que quieres eliminar este video?')) return;
     
     try {
@@ -216,6 +257,3 @@ async function deleteVideo(id) {
     }
 }
 
-if (db) {
-    loadVideos();
-}

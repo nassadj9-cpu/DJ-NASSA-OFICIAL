@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
 import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: window.FIREBASE_API_KEY || "AIzaSyBVTCCnBsfZMRlxlJfQLDR1oc9dAzuN_qc",
@@ -12,9 +13,29 @@ const firebaseConfig = {
     measurementId: "G-TQBSY2S126"
 };
 
+const ADMIN_EMAIL = "nassadj9@gmail.com";
+
 let app;
 let analytics;
 let db;
+let auth;
+
+let firebaseReadyResolve;
+let authReadyResolve;
+window.firebaseReadyPromise = new Promise((resolve) => {
+    firebaseReadyResolve = resolve;
+});
+window.authReadyPromise = new Promise((resolve) => {
+    authReadyResolve = resolve;
+});
+
+const authListeners = [];
+window.registerAuthListener = function(callback) {
+    authListeners.push(callback);
+    if (window.currentUser !== undefined) {
+        callback(window.currentUser);
+    }
+};
 
 try {
     if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "") {
@@ -26,20 +47,116 @@ try {
     
     analytics = getAnalytics(app);
     db = getFirestore(app);
+    auth = getAuth(app);
+    window.firebaseAuth = auth;
     
     console.log('✓ Firebase initialized successfully');
     console.log('  - Project:', firebaseConfig.projectId);
     console.log('  - Storage:', firebaseConfig.storageBucket);
+    
+    let authInitialized = false;
+    onAuthStateChanged(auth, (user) => {
+        window.currentUser = user;
+        window.isAdmin = user && user.email === ADMIN_EMAIL;
+        
+        updateAuthUI(user);
+        
+        if (user) {
+            console.log('✓ User authenticated:', user.email);
+            console.log('  - Is Admin:', window.isAdmin);
+        } else {
+            console.log('ℹ No user authenticated');
+        }
+        
+        if (!authInitialized) {
+            authInitialized = true;
+            authReadyResolve(user);
+        }
+        
+        authListeners.forEach(callback => callback(user));
+    });
     
     logEvent(analytics, 'page_view', {
         page_title: document.title,
         page_location: window.location.href,
         page_path: window.location.pathname
     });
+    
+    firebaseReadyResolve();
 } catch (error) {
     console.error('Error initializing Firebase:', error);
     console.error('Firebase functionality will be limited. Please check your configuration.');
+    firebaseReadyResolve();
+    authReadyResolve(null);
 }
+
+function updateAuthUI(user) {
+    const authButtons = document.getElementById('authButtons');
+    if (!authButtons) return;
+    
+    if (user) {
+        authButtons.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <span style="color: var(--accent-color); font-size: 14px;">
+                    ${user.email} ${window.isAdmin ? '(Admin)' : ''}
+                </span>
+                <button id="logoutBtn" class="btn btn-secondary" style="padding: 8px 20px;">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
+            </div>
+        `;
+        
+        const logoutBtn = document.getElementById('logoutBtn');
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                alert('Sesión cerrada exitosamente');
+            } catch (error) {
+                console.error('Error al cerrar sesión:', error);
+                alert('Error al cerrar sesión: ' + error.message);
+            }
+        });
+    } else {
+        authButtons.innerHTML = `
+            <button id="loginBtn" class="btn btn-primary" style="padding: 8px 20px;">
+                <i class="fab fa-google"></i> Iniciar Sesión
+            </button>
+        `;
+        
+        const loginBtn = document.getElementById('loginBtn');
+        loginBtn.addEventListener('click', async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error('Error al iniciar sesión:', error);
+                alert('Error al iniciar sesión: ' + error.message);
+            }
+        });
+    }
+}
+
+window.googleLogin = async function() {
+    const provider = new GoogleAuthProvider();
+    try {
+        const result = await signInWithPopup(auth, provider);
+        console.log('Login exitoso:', result.user.email);
+        return result.user;
+    } catch (error) {
+        console.error('Error en login:', error);
+        throw error;
+    }
+};
+
+window.googleLogout = async function() {
+    try {
+        await signOut(auth);
+        console.log('Logout exitoso');
+    } catch (error) {
+        console.error('Error en logout:', error);
+        throw error;
+    }
+};
 
 document.addEventListener('DOMContentLoaded', function() {
     const hamburger = document.querySelector('.hamburger');
